@@ -20,6 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.backend.stayHubApp.util.AppUtils.getCurrentUser;
 
 @Service
 @Slf4j
@@ -94,7 +97,7 @@ public class HotelServiceImpl implements HotelService {
 
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if(!user.equals(hotel.getOwner())) {
-            throw new UnAuthorisedException("This user does not own this hotel with id: "+id);
+            throw new UnAuthorisedException("This user does not own this hotel with id: "+hotelId);
         }
 
         hotel.setActive(true);
@@ -111,5 +114,12 @@ public class HotelServiceImpl implements HotelService {
         List<RoomDto> rooms = hotel.getRooms().stream().map((element) -> modelMapper.map(element, RoomDto.class)).toList();
 
         return new HotelInfoDto(modelMapper.map(hotel, HotelDto.class), rooms);
+    }
+
+    @Override
+    public List<HotelDto> getAllHotels() {
+        User user = getCurrentUser();
+        List<Hotel> hotels = hotelRepository.findByOwner(user);
+        return hotels.stream().map((element) -> modelMapper.map(element, HotelDto.class)).collect(Collectors.toList());
     }
 }
